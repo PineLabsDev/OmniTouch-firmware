@@ -1,6 +1,6 @@
 {
   "name": "OmniTouch",
-  "version": "v0.7.2",
+  "version": "v0.7.3",
   "home_assistant_domain": "",
   "new_install_prompt_erase": true,
   "new_install_improv_wait_time": 20,
