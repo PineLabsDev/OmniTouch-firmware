@@ -1,0 +1,19 @@
+{
+  "name": "OmniTouch",
+  "version": "v0.7.1",
+  "home_assistant_domain": "",
+  "new_install_prompt_erase": true,
+  "new_install_improv_wait_time": 20,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "improv": true,
+      "parts": [
+        {
+          "path": "omnitouch-factory.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}

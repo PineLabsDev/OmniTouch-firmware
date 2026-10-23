@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OmniTouch · web flasher</title>
+<meta name="description" content="Flash the latest OmniTouch firmware to a Guition JC8048W550 5-inch ESP32-S3 display from your browser.">
+<script type="module" src="https://unpkg.com/esp-web-tools@10.1.0/dist/web/install-button.js?module"></script>
+<style>
+:root{--bg:#0f1216;--card:#1b2129;--card2:#232a34;--line:#2c3440;--fg:#e8ecf1;--mut:#8b96a5;--acc:#00ae42;--prusa:#fa6831;--warn:#f0a020}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f4f6f8;--card:#fff;--card2:#eef1f4;--line:#dde2e8;--fg:#14181d;--mut:#5c6773}}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:960px;margin:0 auto;padding:24px 16px 64px}
+header{display:flex;align-items:center;gap:14px;margin:8px 0 28px}
+header svg{flex:0 0 auto}h1{margin:0;font-size:28px;letter-spacing:-.01em}h2{font-size:19px;margin:0 0 10px}
+.sub{color:var(--mut);margin:2px 0 0}
+.grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}@media (max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+.hero{display:flex;flex-direction:column;gap:14px}
+.ver{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.pill{background:var(--card2);border:1px solid var(--line);border-radius:99px;padding:3px 10px;font-size:13px;color:var(--mut)}
+.pill b{color:var(--fg)}
+esp-web-install-button button,.btn{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:14px 22px;font:600 17px system-ui;cursor:pointer}
+.btn.s{background:var(--card2);color:var(--fg);border:1px solid var(--line);font-weight:500;font-size:15px;padding:10px 16px;text-decoration:none;display:inline-block}
+ol{padding-left:20px;margin:6px 0}li{margin:6px 0}.mut{color:var(--mut);font-size:14px}
+code{background:var(--card2);padding:1px 6px;border-radius:6px;font-size:14px}
+pre{background:var(--card2);padding:12px;border-radius:10px;overflow-x:auto;font-size:13px}
+.warn{border-left:3px solid var(--warn);padding:8px 12px;background:var(--card2);border-radius:8px;font-size:14px}
+label{display:block;font-size:13px;color:var(--mut);margin:10px 0 4px}
+input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:inherit}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}@media (max-width:520px){.row{grid-template-columns:1fr}}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:6px}
+.feat div{background:var(--card2);border-radius:12px;padding:12px;font-size:14px}.feat b{display:block;margin-bottom:2px}
+.printer{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
+footer{margin-top:32px;color:var(--mut);font-size:13px}
+a{color:var(--acc)}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <svg width="54" height="54" viewBox="0 0 54 54" aria-hidden="true">
+    <polygon points="27,4 50,17 27,30 4,17" fill="#d9dce1"/>
+    <polygon points="4,17 27,30 27,50 4,37" fill="#2a2e35"/><polygon points="27,30 50,17 50,37 27,50" fill="#1c1f24"/>
+    <polygon points="8,22 25,32 25,45 8,35" fill="#6f8ea6" opacity=".55"/>
+    <rect x="23" y="13" width="8" height="4" rx="1" fill="#00ae42"/>
+  </svg>
+  <div><h1>OmniTouch</h1><p class="sub">Touch control panel for Bambu Lab &amp; Prusa printers · Guition JC8048W550 (ESP32-S3, 5″ 800×480)</p></div>
+</header>
+
+<div class="grid">
+  <section class="card hero">
+    <h2>Install or update</h2>
+    <div class="ver"><span class="pill">Latest <b id="ver">…</b></span><span class="pill" id="date"></span><span class="pill">ESP32-S3 · 16 MB flash</span></div>
+    <esp-web-install-button manifest="firmware/manifest.json">
+      <button slot="activate">Connect &amp; install</button>
+      <span slot="unsupported"><div class="warn">This browser can't talk to USB serial devices. Use Chrome or Edge on a desktop computer.</div></span>
+      <span slot="not-allowed"><div class="warn">Serial access needs HTTPS (or localhost).</div></span>
+    </esp-web-install-button>
+    <ol>
+      <li>Connect the display to this computer with a USB-C <b>data</b> cable.</li>
+      <li>Click <b>Connect &amp; install</b> and pick the serial port (often <code>USB-SERIAL CH340</code> or <code>USB JTAG/serial</code>).</li>
+      <li>Choose <b>Install</b>. Keep “erase” ticked on the first install. It takes about a minute.</li>
+      <li>When asked, enter your Wi-Fi — the display connects and shows its IP address.</li>
+    </ol>
+    <p class="mut">Not detected? Hold <b>BOOT</b>, tap <b>RST</b>, release <b>BOOT</b>, then connect again. Already installed? Update over Wi-Fi from <b>Settings → Display → Firmware</b> on the screen, or from the device's web page.</p>
+  </section>
+
+  <section class="card">
+    <h2>What it does</h2>
+    <div class="feat">
+      <div><b>Many printers</b>Overview of up to 8 printers with isometric icons per model.</div>
+      <div><b>Bambu Lab</b>P1S/P1P, X1C/X1E, A1/A1 mini, P2S, H2D over LAN MQTT (or cloud).</div>
+      <div><b>Prusa</b>MK4/MK4S, MK3.9, MK3.5, XL, MINI, CORE One via PrusaLink.</div>
+      <div><b>Plate preview</b>Slicer plate render, live progress, tap-to-skip objects.</div>
+      <div><b>Filament &amp; AMS</b>Trays, colors, remaining, humidity, load/unload, edit.</div>
+      <div><b>Full control</b>Temps, fans, speed, light, motion, AI detection, calibration.</div>
+    </div>
+  </section>
+</div>
+
+<section class="card" style="margin-top:16px">
+  <h2>Optional: SD-card config file</h2>
+  <p class="mut">You can set everything on the touchscreen or at <code>http://omnitouch.local</code>. If you prefer, create <code>omnitouch.json</code> here, copy it to a FAT32 microSD card and insert it before power-up. It is imported once and then renamed.</p>
+  <div class="row">
+    <div><label>Wi-Fi name (SSID)</label><input id="ssid" autocomplete="off"></div>
+    <div><label>Wi-Fi password</label><input id="pass" type="password" autocomplete="off"></div>
+  </div>
+  <div id="printers"></div>
+  <p><button class="btn s" type="button" onclick="addPrinter('bambu_lan')">+ Bambu Lab printer</button>
+     <button class="btn s" type="button" onclick="addPrinter('prusalink')">+ Prusa printer</button>
+     <button class="btn" type="button" onclick="download()" style="float:right">Download omnitouch.json</button></p>
+  <p class="mut" style="clear:both">Bambu: access code and serial are on the printer under Settings → Network/Device. For control, newer firmware needs <b>LAN Only Mode + Developer Mode</b>. Prusa: the PrusaLink password is on the printer under Settings → Network → PrusaLink.</p>
+</section>
+
+<section class="card" style="margin-top:16px">
+  <h2>Manual flashing</h2>
+  <p class="mut">Download <a id="factory" href="firmware/omnitouch-factory.bin">omnitouch-factory.bin</a> and run:</p>
+  <pre>esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 omnitouch-factory.bin</pre>
+  <p class="mut">The OTA image (<a href="firmware/omnitouch-ota.bin">omnitouch-ota.bin</a>) can also be uploaded from the device's web page.</p>
+</section>
+
+<footer>Independent open-source project; not affiliated with Bambu Lab, Prusa Research or the original xtouch. Flashing replaces the firmware on the display only — your printers are not modified.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+fetch('firmware/version.json',{cache:'no-store'}).then(r=>r.json()).then(v=>{$('ver').textContent=v.version;if(v.date)$('date').textContent=v.date}).catch(()=>{$('ver').textContent='not published yet'});
+const MODELS={bambu_lan:['Auto','P1S','P1P','X1C','X1E','A1','A1 mini','P2S','H2D','H2S'],prusalink:['MK4/MK4S','MK3.9','MK3.5/MK3S','XL','MINI','CORE One']};
+let P=[];
+function esc(s){return String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function addPrinter(kind){P.push(kind=='prusalink'?{kind,name:'',model:'MK4/MK4S',host:'',user:'maker',password:''}:{kind,name:'',model:'Auto',host:'',serial:'',accessCode:''});render()}
+function render(){$('printers').innerHTML=P.map((p,i)=>{const f=(k,l,t='text')=>`<div><label>${l}</label><input type="${t}" value="${esc(p[k])}" oninput="P[${i}]['${k}']=this.value"></div>`;
+ const m=`<div><label>Model</label><select onchange="P[${i}].model=this.value">${MODELS[p.kind].map(x=>`<option ${x==p.model?'selected':''}>${x}</option>`).join('')}</select></div>`;
+ return `<div class="printer"><b>${p.kind=='prusalink'?'Prusa (PrusaLink)':'Bambu Lab (LAN)'}</b> <a href="#" onclick="P.splice(${i},1);render();return false" style="float:right">remove</a>
+ <div class="row">${f('name','Name')}${m}</div><div class="row">${f('host','IP address')}${p.kind=='prusalink'?f('password','PrusaLink password','password'):f('serial','Serial number')}</div>
+ ${p.kind=='prusalink'?'':`<div class="row">${f('accessCode','LAN access code','password')}<div></div></div>`}</div>`}).join('')}
+function download(){const cfg={version:1,wifi:{ssid:$('ssid').value,pass:$('pass').value},printers:P.map(p=>Object.assign({enabled:true},p))};
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'}));a.download='omnitouch.json';a.click()}
+addPrinter('bambu_lan');
+</script>
+</body>
+</html>
