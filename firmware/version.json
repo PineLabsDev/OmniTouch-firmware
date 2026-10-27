@@ -1,9 +1,9 @@
 {
-  "version": "v0.8.1",
+  "version": "v0.8.2",
   "date": "2026-10-27",
   "ota": "omnitouch-ota.bin",
-  "size": 2159984,
-  "sha256": "c52dc9f45ef9adbeceb1b700fe6a6a830fa2896c0eddad2d2462f37cfd12cc24",
+  "size": 2094464,
+  "sha256": "d4f622adddd549efcbd512041f1320b1e4ffe0d33a2d3ded2ab3f271f8a81c5f",
   "factory": "omnitouch-factory.bin",
-  "factory_sha256": "d5b13bd85f3b2f080b7c7b8aaf95b203eb4fef4300342f07e562a78d49912c9b"
+  "factory_sha256": "123667299b2baa133d89b4fdfcd9576f6e1c2fdc21754b85ab6ad14dd6e929c5"
 }
