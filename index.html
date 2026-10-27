@@ -33,6 +33,18 @@ input,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--l
 .printer{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px}
 footer{margin-top:32px;color:var(--mut);font-size:13px}
 a{color:var(--acc)}
+.files{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.frow{display:grid;grid-template-columns:1fr 130px 40px;gap:8px;align-items:center}
+.frow .fn{background:var(--card2);border:1px dashed var(--line);border-radius:10px;padding:9px 10px;font-size:14px;color:var(--mut);cursor:pointer;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.frow .fn.ok{color:var(--fg);border-style:solid}
+.x{background:var(--card2);border:1px solid var(--line);color:var(--fg);border-radius:10px;height:40px;cursor:pointer}
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}@media (max-width:640px){.opts{grid-template-columns:1fr 1fr}}
+.chk{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:14px;color:var(--fg)}.chk input{width:auto}
+.bar{height:10px;background:var(--card2);border-radius:99px;overflow:hidden;margin-top:12px}.bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .2s}
+#log{height:180px;overflow:auto;white-space:pre-wrap;margin-top:12px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn:disabled,.btn.s:disabled{opacity:.45;cursor:not-allowed}
+.presets{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
 </style>
 </head>
 <body>
@@ -68,10 +80,10 @@ a{color:var(--acc)}
   <section class="card">
     <h2>What it does</h2>
     <div class="feat">
-      <div><b>Many printers</b>Overview of up to 8 printers with isometric icons per model.</div>
+      <div><b>Many printers</b>Overview of up to 8 printers with live progress rings.</div>
       <div><b>Bambu Lab</b>P1S/P1P, X1C/X1E, A1/A1 mini, P2S, H2D over LAN MQTT (or cloud).</div>
       <div><b>Prusa</b>MK4/MK4S, MK3.9, MK3.5, XL, MINI, CORE One via PrusaLink.</div>
-      <div><b>Plate preview</b>Slicer plate render, live progress, tap-to-skip objects.</div>
+      <div><b>Print status</b>Progress, layers, time left / ETA, HMS messages, skip objects.</div>
       <div><b>Filament &amp; AMS</b>Trays, colors, remaining, humidity, load/unload, edit.</div>
       <div><b>Full control</b>Temps, fans, speed, light, motion, AI detection, calibration.</div>
     </div>
@@ -92,11 +104,38 @@ a{color:var(--acc)}
   <p class="mut" style="clear:both">Bambu: access code and serial are on the printer under Settings → Network/Device. For control, newer firmware needs <b>LAN Only Mode + Developer Mode</b>. Prusa: the PrusaLink password is on the printer under Settings → Network → PrusaLink.</p>
 </section>
 
-<section class="card" style="margin-top:16px">
-  <h2>Manual flashing</h2>
-  <p class="mut">Download <a id="factory" href="firmware/omnitouch-factory.bin">omnitouch-factory.bin</a> and run:</p>
-  <pre>esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 omnitouch-factory.bin</pre>
-  <p class="mut">The OTA image (<a href="firmware/omnitouch-ota.bin">omnitouch-ota.bin</a>) can also be uploaded from the device's web page.</p>
+<section class="card" style="margin-top:16px" id="adv">
+  <h2>Advanced flasher (your own files)</h2>
+  <p class="mut">Flash any image at any address straight from the browser (esptool in JavaScript, Chrome/Edge). Useful for a test build, a tuned build, an older release or a full backup restore.</p>
+  <div class="presets">
+    <button class="btn s" type="button" onclick="presetLatest()">Latest release (factory @ 0x0)</button>
+    <button class="btn s" type="button" onclick="presetFactory()">Factory image @ 0x0</button>
+    <button class="btn s" type="button" onclick="presetApp()">App / OTA image @ 0x10000</button>
+    <button class="btn s" type="button" onclick="presetParts()">Bootloader + partitions + app</button>
+  </div>
+  <div class="files" id="files"></div>
+  <p><button class="btn s" type="button" onclick="addRow('',0x10000)">+ Add file</button></p>
+  <div class="opts">
+    <div><label>Baud rate</label><select id="baud"><option>115200</option><option>230400</option><option selected>460800</option><option>921600</option></select></div>
+    <div><label>Flash mode</label><select id="fmode"><option value="keep" selected>keep</option><option>qio</option><option>qout</option><option>dio</option><option>dout</option></select></div>
+    <div><label>Flash frequency</label><select id="ffreq"><option value="keep" selected>keep</option><option>80m</option><option>40m</option></select></div>
+    <div><label>Flash size</label><select id="fsize"><option value="keep" selected>keep</option><option>16MB</option><option>8MB</option><option>4MB</option></select></div>
+  </div>
+  <label class="chk"><input type="checkbox" id="eraseAll"> Erase the whole flash first (deletes Wi-Fi, printers and settings)</label>
+  <label class="chk"><input type="checkbox" id="otaReset"> Boot from the first app slot (clears OTA data at 0xE000 — use when flashing an app image at 0x10000)</label>
+  <label class="chk"><input type="checkbox" id="compress" checked> Compressed transfer (faster)</label>
+  <label class="chk"><input type="checkbox" id="resetAfter" checked> Reset the display when done</label>
+  <div class="acts">
+    <button class="btn s" type="button" id="bConn" onclick="connect()">Connect</button>
+    <button class="btn" type="button" id="bFlash" onclick="flash()" disabled>Flash</button>
+    <button class="btn s" type="button" id="bErase" onclick="eraseOnly()" disabled>Erase flash only</button>
+    <button class="btn s" type="button" id="bReset" onclick="resetDev()" disabled>Reset</button>
+    <button class="btn s" type="button" id="bDisc" onclick="disconnect()" disabled>Disconnect</button>
+  </div>
+  <div class="bar"><i id="prog"></i></div>
+  <pre id="log">Not connected.</pre>
+  <div class="warn">After USB flashing, unplug the display for 5 s and plug it back in — the USB reset can leave it in download mode (the screen then cycles test colours). The flash at 0x0 with the factory image keeps your settings unless “erase” is ticked.</div>
+  <p class="mut">Command line instead: <code>esptool.py --chip esp32s3 --baud 921600 write_flash 0x0 omnitouch-factory.bin</code> · files: <a href="firmware/omnitouch-factory.bin">omnitouch-factory.bin</a>, <a href="firmware/omnitouch-ota.bin">omnitouch-ota.bin</a></p>
 </section>
 
 <footer>Independent open-source project; not affiliated with Bambu Lab, Prusa Research or the original xtouch. Flashing replaces the firmware on the display only — your printers are not modified.</footer>
@@ -116,6 +155,70 @@ function render(){$('printers').innerHTML=P.map((p,i)=>{const f=(k,l,t='text')=>
 function download(){const cfg={version:1,wifi:{ssid:$('ssid').value,pass:$('pass').value},printers:P.map(p=>Object.assign({enabled:true},p))};
  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(cfg,null,2)],{type:'application/json'}));a.download='omnitouch.json';a.click()}
 addPrinter('bambu_lan');
+</script>
+<script type="module">
+import * as esptool from "https://unpkg.com/esptool-js@0.4.5/bundle.js";
+const {ESPLoader, Transport} = esptool;
+const $=id=>document.getElementById(id);
+const logEl=$('log');
+const term={clean(){logEl.textContent=''},writeLine(d){logEl.textContent+=d+'\n';logEl.scrollTop=1e9},write(d){logEl.textContent+=d;logEl.scrollTop=1e9}};
+let rows=[], port=null, transport=null, loader=null, busy=false;
+const hex=n=>'0x'+n.toString(16).toUpperCase();
+function renderRows(){
+  $('files').innerHTML='';
+  rows.forEach((r,i)=>{
+    const d=document.createElement('div');d.className='frow';
+    const fn=document.createElement('div');fn.className='fn'+(r.data?' ok':'');fn.textContent=r.name||'Choose a .bin file…';
+    const inp=document.createElement('input');inp.type='file';inp.accept='.bin,application/octet-stream';inp.style.display='none';
+    fn.onclick=()=>inp.click();
+    inp.onchange=()=>{const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=e=>{r.data=e.target.result;r.name=f.name+'  ·  '+(f.size/1024).toFixed(0)+' KB';renderRows();upd()};rd.readAsBinaryString(f)};
+    const ad=document.createElement('input');ad.value=hex(r.addr);ad.title='Flash address (hex)';
+    ad.onchange=()=>{const v=parseInt(ad.value,16);if(isNaN(v)||v%4096){ad.value=hex(r.addr);term.writeLine('Address must be hex and a multiple of 0x1000');}else r.addr=v};
+    const x=document.createElement('button');x.className='x';x.textContent='×';x.title='Remove';x.onclick=()=>{rows.splice(i,1);renderRows();upd()};
+    d.append(fn,inp,ad,x);$('files').append(d);
+  });
+}
+window.addRow=(name,addr,data)=>{rows.push({name,addr,data});renderRows();upd()};
+window.presetFactory=()=>{rows=[];addRow('',0x0)};
+window.presetApp=()=>{rows=[];addRow('',0x10000);$('otaReset').checked=true};
+window.presetParts=()=>{rows=[];addRow('',0x0);addRow('',0x8000);addRow('',0xE000);addRow('',0x10000);term.writeLine('Bootloader @0x0, partitions @0x8000, boot_app0 @0xE000, app @0x10000');};
+window.presetLatest=async()=>{
+  try{term.writeLine('Downloading the latest factory image…');
+    const r=await fetch('firmware/omnitouch-factory.bin',{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);
+    const buf=new Uint8Array(await r.arrayBuffer());let s='';for(let i=0;i<buf.length;i+=0x8000)s+=String.fromCharCode.apply(null,buf.subarray(i,i+0x8000));
+    rows=[];addRow('omnitouch-factory.bin (latest)  ·  '+(buf.length/1024).toFixed(0)+' KB',0x0,s);term.writeLine('Ready: latest factory image @ 0x0');
+  }catch(e){term.writeLine('Download failed: '+e.message)}};
+function upd(){const c=!!loader&&!busy;$('bFlash').disabled=!c||!rows.length||rows.some(r=>!r.data);$('bErase').disabled=!c;$('bReset').disabled=!c;$('bDisc').disabled=!loader||busy;$('bConn').disabled=!!loader||busy}
+window.connect=async()=>{
+  if(!('serial' in navigator)){term.writeLine('This browser has no Web Serial. Use Chrome or Edge on a desktop.');return}
+  try{busy=true;upd();term.clean();
+    port=await navigator.serial.requestPort();transport=new Transport(port,true);
+    loader=new ESPLoader({transport,baudrate:parseInt($('baud').value),terminal:term,romBaudrate:115200});
+    const chip=await loader.main();term.writeLine('Connected: '+chip);
+  }catch(e){term.writeLine('Connect failed: '+e.message+'\nHold BOOT, tap RST, release BOOT and try again.');try{if(transport)await transport.disconnect()}catch(_){};loader=null;transport=null}
+  busy=false;upd()};
+window.disconnect=async()=>{try{if(transport)await transport.disconnect()}catch(_){};loader=null;transport=null;term.writeLine('Disconnected.');upd()};
+window.resetDev=async()=>{if(!transport)return;try{await transport.setDTR(false);await transport.setRTS(true);await new Promise(r=>setTimeout(r,120));await transport.setRTS(false);term.writeLine('Reset sent. If the screen shows test colours, unplug for 5 s.')}catch(e){term.writeLine('Reset failed: '+e.message)}};
+window.eraseOnly=async()=>{if(!loader||!confirm('Erase the whole flash? Firmware, Wi-Fi and printers will be deleted.'))return;busy=true;upd();
+  try{term.writeLine('Erasing… (about 30-60 s)');await loader.eraseFlash();term.writeLine('Flash erased.')}catch(e){term.writeLine('Erase failed: '+e.message)}busy=false;upd()};
+window.flash=async()=>{
+  if(!loader)return;
+  if($('eraseAll').checked&&!confirm('Erase the whole flash first? Wi-Fi, printers and settings will be deleted.'))return;
+  busy=true;upd();
+  try{
+    const files=rows.map(r=>({data:r.data,address:r.addr}));
+    if($('otaReset').checked&&!rows.some(r=>r.addr===0xE000))files.push({data:'\xff'.repeat(0x2000),address:0xE000});
+    files.sort((a,b)=>a.address-b.address);
+    for(let i=1;i<files.length;i++)if(files[i-1].address+files[i-1].data.length>files[i].address)throw new Error('Files overlap at '+hex(files[i].address));
+    const total=files.reduce((n,f)=>n+f.data.length,0);let done=0,cur=-1,curW=0;
+    term.writeLine('Flashing '+files.length+' file(s), '+(total/1024).toFixed(0)+' KB…');
+    await loader.writeFlash({fileArray:files,flashSize:$('fsize').value,flashMode:$('fmode').value,flashFreq:$('ffreq').value,eraseAll:$('eraseAll').checked,compress:$('compress').checked,
+      reportProgress:(i,w,t)=>{if(i!==cur){if(cur>=0)done+=files[cur].data.length;cur=i}$('prog').style.width=Math.min(100,(done+files[i].data.length*w/t)/total*100).toFixed(1)+'%'}});
+    $('prog').style.width='100%';term.writeLine('Done.');
+    if($('resetAfter').checked)await resetDev();
+  }catch(e){term.writeLine('Flash failed: '+e.message)}
+  busy=false;upd()};
+presetLatest();
 </script>
 </body>
 </html>
